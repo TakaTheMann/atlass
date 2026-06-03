@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'; // Ensures this page updates every time it is visited
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 

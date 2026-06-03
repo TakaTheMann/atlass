@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'; // Ensures mission list re-fetches from Supabase on every visit
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import MissionRow from '@/components/MissionRow';
