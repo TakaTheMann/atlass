@@ -1,14 +1,14 @@
+export const dynamic = 'force-dynamic';
 'use client';
 import { createClient } from '@supabase/supabase-js';
 import { useState, useEffect } from 'react';
 
-// Added an onToggle prop to inform the parent that data has changed
 export default function MissionRow({ 
   mission, 
   onToggle 
 }: { 
   mission: any, 
-  onToggle: () => void // New prop to trigger a parent re-fetch
+  onToggle?: () => void // Added '?' to make it optional
 }) {
   const [completed, setCompleted] = useState(!!mission?.is_completed);
 
@@ -25,7 +25,7 @@ export default function MissionRow({
     );
 
     const nextStatus = !completed;
-    setCompleted(nextStatus); // Optimistic UI update
+    setCompleted(nextStatus); 
 
     const { error } = await supabase
       .from('study_blocks') 
@@ -34,10 +34,9 @@ export default function MissionRow({
 
     if (error) {
       console.error('Update failed:', error);
-      setCompleted(!nextStatus); // Rollback
+      setCompleted(!nextStatus); 
     } else {
-      // Successfully updated! 
-      // Notify the parent to re-fetch the analytics/mission list.
+      // Only call onToggle if it was provided
       onToggle?.(); 
     }
   };
