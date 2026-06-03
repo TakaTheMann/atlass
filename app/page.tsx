@@ -1,4 +1,4 @@
-export const dynamic = 'force-dynamic'; // Ensures this page updates every time it is visited
+export const dynamic = 'force-dynamic';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 
@@ -13,12 +13,17 @@ export default async function Home() {
     .select('exam_countdown_date')
     .single();
 
-  const daysRemaining = settings
-    ? Math.ceil(
-        (new Date(settings.exam_countdown_date).getTime() - new Date().getTime()) /
-          (1000 * 60 * 60 * 24)
-      )
-    : 0;
+  // Normalize dates to midnight to ensure accurate day-count calculation
+  const examDate = settings?.exam_countdown_date 
+    ? new Date(settings.exam_countdown_date) 
+    : new Date();
+  const now = new Date();
+
+  examDate.setHours(0, 0, 0, 0);
+  now.setHours(0, 0, 0, 0);
+
+  const diffTime = examDate.getTime() - now.getTime();
+  const daysRemaining = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
 
   return (
     <main
