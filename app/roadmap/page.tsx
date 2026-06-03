@@ -1,50 +1,68 @@
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 
-export const dynamic = 'force-dynamic';
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
-async function getAnalytics() {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+const COURSE_ORDER = [
+  'CS220',
+  'CS225',
+  'CS230',
+  'CS235',
+  'CS250',
+  'CS270',
+  'MA110',
+  'PH212'
+];
 
-  const { data, error } = await supabase
-    .from('v_sessional_analytics')
-    .select('*');
+export default async function Roadmap() {
+  const { data: topics } = await supabase
+    .from('topics')
+    .select('*, courses(name, code)');
 
-  if (error) return [];
+  const grouped: Record<
+    string,
+    {
+      courseName: string;
+      courseCode: string;
+      topics: any[];
+    }
+  > = {};
 
-  return data || [];
-}
+  topics?.forEach((item: any) => {
+    const code = item.courses?.code;
 
-export default async function Analytics() {
-  const data = await getAnalytics();
+    if (!grouped[code]) {
+      grouped[code] = {
+        courseName: item.courses?.name,
+        courseCode: code,
+        topics: [],
+      };
+    }
 
-  const sorted = [...data].sort(
-    (a, b) => b.executed_count - a.executed_count
-  );
+    grouped[code].topics.push(item);
+  });
 
-  const top = sorted[0] ?? null;
-  const maxEx = top?.executed_count ?? 1;
+  const ordered = COURSE_ORDER.map((c) => grouped[c]).filter(Boolean);
 
   return (
     <main
       className="min-h-screen p-14"
       style={{
         background: '#0a0a0a',
-        color: '#f5f1e8',
+        color: '#f4f0e8',
         fontFamily: 'var(--font-sans)',
       }}
     >
-      {/* HEADER */}
       <header className="flex justify-between items-center mb-24">
         <div>
           <p
             style={{
               fontSize: 11,
-              color: 'rgba(245,241,232,0.45)',
-              letterSpacing: '0.22em',
+              color: 'rgba(244,240,232,0.45)',
+              letterSpacing: '0.20em',
               textTransform: 'uppercase',
               marginBottom: 10,
             }}
@@ -55,24 +73,37 @@ export default async function Analytics() {
           <h1
             style={{
               fontFamily: 'var(--font-serif)',
-              fontSize: 'clamp(38px,5vw,60px)',
+              fontSize: 40,
+              color: '#f4f0e8',
+              fontStyle: 'italic',
               fontWeight: 400,
-              color: '#f5f1e8',
-              letterSpacing: '-0.02em',
             }}
           >
-            Performance
+            Mastery Roadmap
           </h1>
+
+          <p
+            style={{
+              marginTop: 12,
+              color: 'rgba(244,240,232,0.55)',
+              fontSize: 14,
+              letterSpacing: '0.05em',
+            }}
+          >
+            Complete academic blueprint for Emmanuel Mutaka
+          </p>
         </div>
 
         <Link
           href="/"
           style={{
             fontSize: 11,
-            color: 'rgba(245,241,232,0.55)',
+            color: 'rgba(244,240,232,0.55)',
             letterSpacing: '0.14em',
             textTransform: 'uppercase',
             textDecoration: 'none',
+            border: '1px solid rgba(244,240,232,0.12)',
+            padding: '12px 18px',
           }}
           className="hover:text-white transition-colors"
         >
@@ -80,247 +111,156 @@ export default async function Analytics() {
         </Link>
       </header>
 
-      {/* HERO */}
-      {top && (
-        <section
-          style={{
-            marginBottom: 80,
-            padding: 40,
-            border: '1px solid rgba(245,241,232,0.08)',
-            background: 'rgba(245,241,232,0.02)',
-          }}
-        >
-          <p
-            style={{
-              fontSize: 11,
-              color: 'rgba(245,241,232,0.45)',
-              letterSpacing: '0.16em',
-              textTransform: 'uppercase',
-              marginBottom: 12,
-            }}
-          >
-            Strongest Course
-          </p>
-
-          <h2
-            style={{
-              fontFamily: 'var(--font-serif)',
-              fontSize: 'clamp(42px,6vw,72px)',
-              color: '#f5f1e8',
-              lineHeight: 1,
-              marginBottom: 32,
-            }}
-          >
-            {top.course_name}
-          </h2>
-
-          <div className="flex gap-20 flex-wrap">
-            <div>
-              <p
-                style={{
-                  fontSize: 11,
-                  color: 'rgba(245,241,232,0.45)',
-                  letterSpacing: '0.14em',
-                  textTransform: 'uppercase',
-                  marginBottom: 8,
-                }}
-              >
-                Completion
-              </p>
-
-              <p
+      <div
+        className="flex flex-col"
+        style={{
+          gap: 80,
+        }}
+      >
+        {ordered.map((group, gi) => (
+          <section key={group.courseCode}>
+            <div className="flex items-baseline gap-5 mb-10">
+              <span
                 style={{
                   fontFamily: 'var(--font-serif)',
-                  fontSize: 48,
-                  color: '#f5f1e8',
+                  fontStyle: 'italic',
+                  fontSize: 14,
+                  color: 'rgba(244,240,232,0.45)',
                 }}
               >
-                {top.completion_rate ?? 0}%
-              </p>
-            </div>
+                {String(gi + 1).padStart(2, '0')}
+              </span>
 
-            <div>
-              <p
+              <span
                 style={{
-                  fontSize: 11,
-                  color: 'rgba(245,241,232,0.45)',
-                  letterSpacing: '0.14em',
+                  fontSize: 12,
+                  color: 'rgba(244,240,232,0.55)',
+                  letterSpacing: '0.18em',
                   textTransform: 'uppercase',
-                  marginBottom: 8,
                 }}
               >
-                Sessions Executed
-              </p>
+                {group.courseCode}
+              </span>
 
-              <p
+              <span
                 style={{
                   fontFamily: 'var(--font-serif)',
-                  fontSize: 48,
-                  color: '#f5f1e8',
+                  fontSize: 24,
+                  color: '#f4f0e8',
                 }}
               >
-                {top.executed_count ?? 0}
-              </p>
+                {group.courseName}
+              </span>
+
+              <div
+                style={{
+                  flex: 1,
+                  height: 1,
+                  background: 'rgba(244,240,232,0.10)',
+                }}
+              />
+
+              <span
+                style={{
+                  fontSize: 12,
+                  color: 'rgba(244,240,232,0.40)',
+                  letterSpacing: '0.08em',
+                }}
+              >
+                {group.topics.length} TOPICS
+              </span>
             </div>
-          </div>
-        </section>
-      )}
 
-      {/* TABLE */}
-      <section>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: 28,
-          }}
-        >
-          <h3
-            style={{
-              fontSize: 12,
-              letterSpacing: '0.16em',
-              textTransform: 'uppercase',
-              color: 'rgba(245,241,232,0.55)',
-            }}
-          >
-            Course Rankings
-          </h3>
-
-          <span
-            style={{
-              fontSize: 11,
-              color: 'rgba(245,241,232,0.35)',
-            }}
-          >
-            Last 30 Days
-          </span>
-        </div>
-
-        {sorted.length > 0 ? (
-          <div>
-            {sorted.map((course, i) => {
-              const barWidth = Math.round(
-                (course.executed_count / maxEx) * 100
-              );
-
-              return (
+            <div
+              className="grid md:grid-cols-2"
+              style={{
+                gap: '0',
+              }}
+            >
+              {group.topics.map((topic: any, ti: number) => (
                 <div
-                  key={course.course_name}
+                  key={topic.id}
+                  className="flex items-baseline gap-4 py-5"
                   style={{
-                    padding: '24px 0',
                     borderBottom:
-                      '1px solid rgba(245,241,232,0.08)',
+                      '1px solid rgba(244,240,232,0.06)',
                   }}
                 >
-                  <div className="flex justify-between mb-4">
-                    <div className="flex gap-5 items-center">
-                      <span
-                        style={{
-                          width: 28,
-                          color: 'rgba(245,241,232,0.45)',
-                          fontSize: 14,
-                        }}
-                      >
-                        {String(i + 1).padStart(2, '0')}
-                      </span>
-
-                      <span
-                        style={{
-                          fontSize: 18,
-                          color:
-                            i === 0
-                              ? '#f5f1e8'
-                              : 'rgba(245,241,232,0.75)',
-                        }}
-                      >
-                        {course.course_name}
-                      </span>
-                    </div>
-
-                    <div className="flex gap-12">
-                      <span
-                        style={{
-                          color: 'rgba(245,241,232,0.7)',
-                        }}
-                      >
-                        {course.completion_rate ?? 0}%
-                      </span>
-
-                      <span
-                        style={{
-                          width: 40,
-                          textAlign: 'right',
-                          color: '#f5f1e8',
-                        }}
-                      >
-                        {course.executed_count ?? 0}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div
+                  <span
                     style={{
-                      height: 4,
-                      background:
-                        'rgba(245,241,232,0.06)',
+                      fontSize: 12,
+                      color: 'rgba(244,240,232,0.30)',
+                      fontFamily: 'var(--font-serif)',
+                      fontStyle: 'italic',
+                      minWidth: 28,
                     }}
                   >
-                    <div
-                      style={{
-                        width: `${barWidth}%`,
-                        height: '100%',
-                        background:
-                          i === 0
-                            ? 'rgba(245,241,232,0.85)'
-                            : 'rgba(245,241,232,0.35)',
-                        transition: '0.3s',
-                      }}
-                    />
-                  </div>
+                    {ti + 1}
+                  </span>
+
+                  <span
+                    style={{
+                      fontSize: 16,
+                      color: 'rgba(244,240,232,0.88)',
+                      fontWeight: 300,
+                      letterSpacing: '0.01em',
+                    }}
+                  >
+                    {topic.name}
+                  </span>
                 </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div
-            style={{
-              padding: 50,
-              border: '1px solid rgba(245,241,232,0.08)',
-              textAlign: 'center',
-            }}
-          >
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+
+      <footer
+        style={{
+          marginTop: 100,
+          paddingTop: 40,
+          borderTop: '1px solid rgba(244,240,232,0.08)',
+        }}
+      >
+        <div className="flex justify-between items-center">
+          <div>
             <p
               style={{
                 fontFamily: 'var(--font-serif)',
-                fontSize: 24,
-                color: 'rgba(245,241,232,0.5)',
+                fontStyle: 'italic',
+                fontSize: 18,
+                color: 'rgba(244,240,232,0.75)',
+                marginBottom: 8,
               }}
             >
-              No study data recorded yet.
+              "Mastery is earned one topic at a time."
+            </p>
+
+            <p
+              style={{
+                fontSize: 11,
+                color: 'rgba(244,240,232,0.30)',
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+              }}
+            >
+              Atlas Academic Operating System
             </p>
           </div>
-        )}
-      </section>
 
-      {/* FOOTER */}
-      <footer
-        style={{
-          marginTop: 80,
-          paddingTop: 24,
-          borderTop: '1px solid rgba(245,241,232,0.06)',
-        }}
-      >
-        <p
-          style={{
-            fontSize: 11,
-            color: 'rgba(245,241,232,0.3)',
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-          }}
-        >
-          Atlas Performance Intelligence · Emmanuel Mutaka
-        </p>
+          <div
+            style={{
+              textAlign: 'right',
+              fontSize: 11,
+              color: 'rgba(244,240,232,0.25)',
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+            }}
+          >
+            <div>{topics?.length ?? 0} Topics</div>
+            <div>{ordered.length} Courses</div>
+          </div>
+        </div>
       </footer>
     </main>
   );
