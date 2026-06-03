@@ -1,190 +1,326 @@
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+export const dynamic = 'force-dynamic';
 
-export default async function Home() {
-  const { data: settings } = await supabase
-    .from('app_settings')
-    .select('exam_countdown_date')
-    .single();
+async function getAnalytics() {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 
-  const daysRemaining = settings
-    ? Math.ceil(
-        (new Date(settings.exam_countdown_date).getTime() - new Date().getTime()) /
-          (1000 * 60 * 60 * 24)
-      )
-    : 0;
+  const { data, error } = await supabase
+    .from('v_sessional_analytics')
+    .select('*');
+
+  if (error) return [];
+
+  return data || [];
+}
+
+export default async function Analytics() {
+  const data = await getAnalytics();
+
+  const sorted = [...data].sort(
+    (a, b) => b.executed_count - a.executed_count
+  );
+
+  const top = sorted[0] ?? null;
+  const maxEx = top?.executed_count ?? 1;
 
   return (
     <main
-      className="min-h-screen flex flex-col justify-between p-14"
+      className="min-h-screen p-14"
       style={{
         background: '#0a0a0a',
-        color: '#e8e4dc',
+        color: '#f5f1e8',
         fontFamily: 'var(--font-sans)',
       }}
     >
-      <header className="flex justify-end items-start">
-        <div
-          className="text-right"
+      {/* HEADER */}
+      <header className="flex justify-between items-center mb-24">
+        <div>
+          <p
+            style={{
+              fontSize: 11,
+              color: 'rgba(245,241,232,0.45)',
+              letterSpacing: '0.22em',
+              textTransform: 'uppercase',
+              marginBottom: 10,
+            }}
+          >
+            Atlas Intelligence
+          </p>
+
+          <h1
+            style={{
+              fontFamily: 'var(--font-serif)',
+              fontSize: 'clamp(38px,5vw,60px)',
+              fontWeight: 400,
+              color: '#f5f1e8',
+              letterSpacing: '-0.02em',
+            }}
+          >
+            Performance
+          </h1>
+        </div>
+
+        <Link
+          href="/"
           style={{
             fontSize: 11,
-            color: 'rgba(232,228,220,0.55)',
-            letterSpacing: '0.08em',
-            lineHeight: 1.9,
+            color: 'rgba(245,241,232,0.55)',
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            textDecoration: 'none',
           }}
+          className="hover:text-white transition-colors"
         >
-          <div>Mr Emmanuel Mutaka</div>
-          <div>Mission Status · Active</div>
-        </div>
+          ← Dashboard
+        </Link>
       </header>
 
-      <section className="flex flex-col justify-center py-16">
-        <p
+      {/* HERO */}
+      {top && (
+        <section
           style={{
-            fontSize: 12,
-            color: 'rgba(232,228,220,0.75)',
-            letterSpacing: '0.08em',
-            marginBottom: 20,
+            marginBottom: 80,
+            padding: 40,
+            border: '1px solid rgba(245,241,232,0.08)',
+            background: 'rgba(245,241,232,0.02)',
           }}
         >
-          Welcome, Mr Emmanuel Mutaka
-        </p>
+          <p
+            style={{
+              fontSize: 11,
+              color: 'rgba(245,241,232,0.45)',
+              letterSpacing: '0.16em',
+              textTransform: 'uppercase',
+              marginBottom: 12,
+            }}
+          >
+            Strongest Course
+          </p>
 
-        <h1
-          style={{
-            fontFamily: 'var(--font-serif)',
-            fontSize: 'clamp(80px, 14vw, 148px)',
-            fontWeight: 400,
-            color: '#e8e4dc',
-            lineHeight: 0.9,
-            letterSpacing: '-0.02em',
-            marginBottom: 24,
-          }}
-        >
-          Atlas
-        </h1>
+          <h2
+            style={{
+              fontFamily: 'var(--font-serif)',
+              fontSize: 'clamp(42px,6vw,72px)',
+              color: '#f5f1e8',
+              lineHeight: 1,
+              marginBottom: 32,
+            }}
+          >
+            {top.course_name}
+          </h2>
 
-        <p
-          style={{
-            fontSize: 14,
-            color: 'rgba(232,228,220,0.55)',
-            maxWidth: 520,
-            lineHeight: 1.8,
-            marginBottom: 48,
-          }}
-        >
-          Your personal academic command center. Every topic mastered,
-          every session tracked, every examination accounted for.
-        </p>
+          <div className="flex gap-20 flex-wrap">
+            <div>
+              <p
+                style={{
+                  fontSize: 11,
+                  color: 'rgba(245,241,232,0.45)',
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                  marginBottom: 8,
+                }}
+              >
+                Completion
+              </p>
 
-        <p
-          style={{
-            fontSize: 11,
-            color: 'rgba(232,228,220,0.55)',
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-            marginBottom: 6,
-          }}
-        >
-          Days Remaining
-        </p>
+              <p
+                style={{
+                  fontFamily: 'var(--font-serif)',
+                  fontSize: 48,
+                  color: '#f5f1e8',
+                }}
+              >
+                {top.completion_rate ?? 0}%
+              </p>
+            </div>
 
-        <p
-          style={{
-            fontFamily: 'var(--font-serif)',
-            fontSize: 'clamp(48px, 8vw, 80px)',
-            color: '#e8e4dc',
-            fontStyle: 'italic',
-            letterSpacing: '-0.02em',
-            marginBottom: 4,
-            fontWeight: 500,
-          }}
-        >
-          {daysRemaining}
-        </p>
+            <div>
+              <p
+                style={{
+                  fontSize: 11,
+                  color: 'rgba(245,241,232,0.45)',
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                  marginBottom: 8,
+                }}
+              >
+                Sessions Executed
+              </p>
 
-        <p
-          style={{
-            fontSize: 11,
-            color: 'rgba(232,228,220,0.45)',
-            letterSpacing: '0.15em',
-            textTransform: 'uppercase',
-          }}
-        >
-          Until Final Examinations
-        </p>
+              <p
+                style={{
+                  fontFamily: 'var(--font-serif)',
+                  fontSize: 48,
+                  color: '#f5f1e8',
+                }}
+              >
+                {top.executed_count ?? 0}
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
 
+      {/* TABLE */}
+      <section>
         <div
           style={{
-            width: '100%',
-            height: 1,
-            background: 'rgba(232,228,220,0.12)',
-            margin: '40px 0',
-          }}
-        />
-
-        <nav className="flex flex-wrap">
-          {[
-            { name: 'Roadmap', path: '/roadmap' },
-            { name: 'Analytics', path: '/analytics' },
-            { name: 'Schedule', path: '/schedule' },
-            { name: 'Missions', path: '/missions' },
-          ].map((link, i, arr) => (
-            <Link
-              key={link.name}
-              href={link.path}
-              style={{
-                padding: '14px 24px',
-                fontSize: 11,
-                letterSpacing: '0.14em',
-                textTransform: 'uppercase',
-                color: 'rgba(232,228,220,0.65)',
-                border: '1px solid rgba(232,228,220,0.12)',
-                borderRight:
-                  i < arr.length - 1
-                    ? 'none'
-                    : '1px solid rgba(232,228,220,0.12)',
-                textDecoration: 'none',
-                transition: 'all 0.25s ease',
-                fontWeight: 400,
-              }}
-              className="hover:text-white hover:bg-[rgba(232,228,220,0.08)]"
-            >
-              {link.name}
-            </Link>
-          ))}
-        </nav>
-      </section>
-
-      <footer className="flex justify-between items-end">
-        <p
-          style={{
-            fontFamily: 'var(--font-serif)',
-            fontStyle: 'italic',
-            fontSize: 14,
-            color: 'rgba(232,228,220,0.45)',
-            maxWidth: 360,
-            lineHeight: 1.7,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 28,
           }}
         >
-          "The man who moves a mountain begins by carrying away small stones."
-        </p>
+          <h3
+            style={{
+              fontSize: 12,
+              letterSpacing: '0.16em',
+              textTransform: 'uppercase',
+              color: 'rgba(245,241,232,0.55)',
+            }}
+          >
+            Course Rankings
+          </h3>
 
-        <span
+          <span
+            style={{
+              fontSize: 11,
+              color: 'rgba(245,241,232,0.35)',
+            }}
+          >
+            Last 30 Days
+          </span>
+        </div>
+
+        {sorted.length > 0 ? (
+          <div>
+            {sorted.map((course, i) => {
+              const barWidth = Math.round(
+                (course.executed_count / maxEx) * 100
+              );
+
+              return (
+                <div
+                  key={course.course_name}
+                  style={{
+                    padding: '24px 0',
+                    borderBottom:
+                      '1px solid rgba(245,241,232,0.08)',
+                  }}
+                >
+                  <div className="flex justify-between mb-4">
+                    <div className="flex gap-5 items-center">
+                      <span
+                        style={{
+                          width: 28,
+                          color: 'rgba(245,241,232,0.45)',
+                          fontSize: 14,
+                        }}
+                      >
+                        {String(i + 1).padStart(2, '0')}
+                      </span>
+
+                      <span
+                        style={{
+                          fontSize: 18,
+                          color:
+                            i === 0
+                              ? '#f5f1e8'
+                              : 'rgba(245,241,232,0.75)',
+                        }}
+                      >
+                        {course.course_name}
+                      </span>
+                    </div>
+
+                    <div className="flex gap-12">
+                      <span
+                        style={{
+                          color: 'rgba(245,241,232,0.7)',
+                        }}
+                      >
+                        {course.completion_rate ?? 0}%
+                      </span>
+
+                      <span
+                        style={{
+                          width: 40,
+                          textAlign: 'right',
+                          color: '#f5f1e8',
+                        }}
+                      >
+                        {course.executed_count ?? 0}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      height: 4,
+                      background:
+                        'rgba(245,241,232,0.06)',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: `${barWidth}%`,
+                        height: '100%',
+                        background:
+                          i === 0
+                            ? 'rgba(245,241,232,0.85)'
+                            : 'rgba(245,241,232,0.35)',
+                        transition: '0.3s',
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div
+            style={{
+              padding: 50,
+              border: '1px solid rgba(245,241,232,0.08)',
+              textAlign: 'center',
+            }}
+          >
+            <p
+              style={{
+                fontFamily: 'var(--font-serif)',
+                fontSize: 24,
+                color: 'rgba(245,241,232,0.5)',
+              }}
+            >
+              No study data recorded yet.
+            </p>
+          </div>
+        )}
+      </section>
+
+      {/* FOOTER */}
+      <footer
+        style={{
+          marginTop: 80,
+          paddingTop: 24,
+          borderTop: '1px solid rgba(245,241,232,0.06)',
+        }}
+      >
+        <p
           style={{
             fontSize: 11,
-            color: 'rgba(232,228,220,0.3)',
-            letterSpacing: '0.1em',
+            color: 'rgba(245,241,232,0.3)',
+            letterSpacing: '0.12em',
             textTransform: 'uppercase',
           }}
         >
-          Atlas Operating System
-        </span>
+          Atlas Performance Intelligence · Emmanuel Mutaka
+        </p>
       </footer>
     </main>
   );
