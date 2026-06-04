@@ -1,7 +1,9 @@
-export const dynamic = 'force-dynamic'; // Ensures mission list re-fetches from Supabase on every visit
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import MissionRow from '@/components/MissionRow';
+import MissionList from '@/components/MissionList'; // Import the client wrapper
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -154,14 +156,7 @@ export default async function Missions() {
         </p>
 
         {missions && missions.length > 0 ? (
-          <div className="flex flex-col">
-            {missions.map((m: any, index: number) => (
-              <MissionRow
-                key={m.id || index}
-                mission={m}
-              />
-            ))}
-          </div>
+          <MissionList initialMissions={missions} />
         ) : (
           <div
             style={{
